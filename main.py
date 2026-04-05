@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from passlib.context import CryptContext
+import bcrypt as _bcrypt
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -29,8 +29,7 @@ if not works_file.exists():
 _pwd = os.getenv("ADMIN_PASSWORD", "")
 if not _pwd:
     raise RuntimeError("ADMIN_PASSWORD is not set in .env")
-_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-os.environ["ADMIN_PASSWORD_HASH"] = _ctx.hash(_pwd)
+os.environ["ADMIN_PASSWORD_HASH"] = _bcrypt.hashpw(_pwd.encode(), _bcrypt.gensalt()).decode()
 del _pwd  # don't keep plaintext in memory
 
 # ── app ───────────────────────────────────────────────────────────────────────

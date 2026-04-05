@@ -1,16 +1,14 @@
 import os
 from datetime import datetime, timedelta
 
+import bcrypt as _bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from pydantic import BaseModel
 
 from utils.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 8
@@ -34,7 +32,7 @@ def get_secret() -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return _bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
 def create_token(username: str) -> str:
