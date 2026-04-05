@@ -18,14 +18,6 @@ MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
-# Magic bytes for each allowed image type
-MAGIC_BYTES: list[tuple[bytes, ...]] = [
-    (b"\xff\xd8\xff",),                          # JPEG
-    (b"\x89PNG\r\n\x1a\n",),                     # PNG
-    (b"RIFF", b"WEBP"),                           # WebP (bytes 0-3 and 8-11)
-    (b"GIF87a", b"GIF89a"),                       # GIF
-]
-
 _lock = asyncio.Lock()
 
 
@@ -33,11 +25,13 @@ _lock = asyncio.Lock()
 
 def _check_magic(data: bytes) -> bool:
     """Return True if the file starts with a known image signature."""
-    if data[:3] in (sig[0] for sig in MAGIC_BYTES[:2]):    # JPEG / PNG
+    if data[:3] == b"\xff\xd8\xff":               # JPEG
         return True
-    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":      # WebP
+    if data[:8] == b"\x89PNG\r\n\x1a\n":          # PNG
         return True
-    if data[:6] in (b"GIF87a", b"GIF89a"):                  # GIF
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":  # WebP
+        return True
+    if data[:6] in (b"GIF87a", b"GIF89a"):         # GIF
         return True
     return False
 

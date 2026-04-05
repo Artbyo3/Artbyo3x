@@ -74,12 +74,13 @@ async def login(request: Request, response: Response, body: LoginRequest):
     if not (password_ok and username_ok):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    https = os.getenv("HTTPS", "true").lower() == "true"
     token = create_token(body.username)
     response.set_cookie(
         key=COOKIE_NAME,
         value=token,
         httponly=True,
-        secure=True,
+        secure=https,
         samesite="strict",
         max_age=TOKEN_EXPIRE_HOURS * 3600,
         path="/",
