@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>artbyo3 / dash</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0908;--surface:#0f0d0b;--ink:#cec5b4;--muted:#2a241c;
+  --dim:#5a4e3a;--line:#1e1910;--pink:#d45c9a;--violet:#7755ee;--gold:#c8872a;
+  --red:#c84a4a;--green:#4ac88a;
+}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Space Mono',monospace;overflow:hidden}
+
+/* ── scrollbar ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--muted);border-radius:2px}
+
+/* ── login ── */
+#login-view{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);z-index:1000;
+}
+#login-view.hidden{display:none}
+.login-box{
+  width:360px;border:1px solid var(--line);padding:3rem 2.5rem;
+}
+.login-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;
+  letter-spacing:-.03em;margin-bottom:.4rem;
+}
+.login-sub{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:2.4rem}
+.field{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.2rem}
+.field label{font-size:.55rem;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.field input{
+  background:var(--surface);border:1px solid var(--line);color:var(--ink);
+  font-family:'Space Mono',monospace;font-size:.75rem;padding:.65rem .8rem;
+  outline:none;transition:border-color .2s;
+}
+.field input:focus{border-color:var(--dim)}
+.btn{
+  width:100%;background:none;border:1px solid var(--line);color:var(--ink);
+  font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.18em;
+  text-transform:uppercase;padding:.7rem;cursor:pointer;
+  transition:border-color .2s,color .2s;margin-top:.4rem;
+}
+.btn:hover{border-color:var(--dim);color:var(--ink)}
+.btn.primary{border-color:var(--ink)}
+.btn.primary:hover{border-color:var(--pink);color:var(--pink)}
+.btn.danger{border-color:var(--muted);color:var(--dim)}
+.btn.danger:hover{border-color:var(--red);color:var(--red)}
+.err{font-size:.58rem;color:var(--red);margin-top:.8rem;min-height:1rem}
+
+/* ── app shell ── */
+#app-view{display:none;height:100%;flex-direction:column}
+#app-view.visible{display:flex}
+
+/* top bar */
+#topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 2rem;border-bottom:1px solid var(--line);flex-shrink:0;
+}
+.topbar-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:.85rem;letter-spacing:-.02em}
+.topbar-logo span{color:var(--dim)}
+.topbar-right{display:flex;align-items:center;gap:1.4rem}
+.topbar-user{font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+#btn-logout{
+  background:none;border:1px solid var(--line);color:var(--dim);
+  font-family:'Space Mono',monospace;font-size:.52rem;letter-spacing:.18em;
+  text-transform:uppercase;padding:.35rem .7rem;cursor:pointer;
+  transition:border-color .2s,color .2s;
+}
+#btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+/* main layout */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* ── upload panel ── */
+#upload-panel{
+  width:340px;flex-shrink:0;border-right:1px solid var(--line);
+  overflow-y:auto;padding:1.8rem;display:flex;flex-direction:column;gap:1.2rem;
+}
+.panel-head{
+  font-size:.55rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);
+  padding-bottom:1rem;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:.8rem;
+}
+.panel-head::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* drop zone */
+#drop-zone{
+  border:1px dashed var(--muted);padding:2rem 1rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.7rem;cursor:pointer;transition:border-color .2s,background .2s;
+  text-align:center;position:relative;min-height:140px;
+}
+#drop-zone:hover,#drop-zone.over{border-color:var(--dim);background:rgba(255,255,255,.02)}
+#drop-zone.has-file{border-color:var(--pink);border-style:solid}
+#drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+#drop-label{font-size:.58rem;color:var(--dim);line-height:1.7}
+#drop-preview{
+  width:100%;max-height:160px;object-fit:contain;display:none;
+  border:1px solid var(--line);
+}
+#drop-preview.show{display:block}
+#drop-filename{font-size:.52rem;color:var(--pink);word-break:break-all;display:none}
+#drop-filename.show{display:block}
+
+/* form fields */
+.f-row{display:flex;gap:.8rem}
+.f-row .field{flex:1}
+.field select{
+  background:var(--surface);border:1px solid var(--line);color:var(--ink);
+  font-family:'Space Mono',monospace;font-size:.72rem;padding:.6rem .8rem;
+  outline:none;transition:border-color .2s;appearance:none;cursor:pointer;
+}
+.field select:focus{border-color:var(--dim)}
+.field input[type=range]{
+  width:100%;accent-color:var(--pink);cursor:pointer;
+  background:none;border:none;padding:0;
+}
+.hue-preview{
+  height:4px;border-radius:2px;margin-top:.4rem;
+  background:linear-gradient(to right,hsl(0,60%,30%),hsl(60,60%,30%),hsl(120,60%,30%),hsl(180,60%,30%),hsl(240,60%,30%),hsl(300,60%,30%),hsl(360,60%,30%));
+}
+#hue-dot{
+  width:10px;height:10px;border-radius:50%;border:2px solid var(--ink);
+  position:relative;top:-7px;transition:left .1s;
+}
+#upload-err{font-size:.58rem;color:var(--red);min-height:1rem}
+#upload-ok{font-size:.58rem;color:var(--green);min-height:1rem;display:none}
+
+/* ── works panel ── */
+#works-panel{flex:1;overflow-y:auto;padding:1.8rem;display:flex;flex-direction:column;gap:1.4rem}
+
+/* filter tabs */
+.filter-tabs{display:flex;gap:0;border:1px solid var(--line);width:fit-content}
+.ftab{
+  background:none;border:none;border-right:1px solid var(--line);
+  font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--dim);padding:.45rem 1rem;cursor:pointer;
+  transition:color .2s,background .2s;
+}
+.ftab:last-child{border-right:none}
+.ftab:hover{color:var(--ink)}
+.ftab.active{background:var(--muted);color:var(--ink)}
+
+/* works grid */
+#works-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:1px;
+  background:var(--line);
+}
+.wc{
+  background:var(--surface);position:relative;
+  display:flex;flex-direction:column;
+}
+.wc-img{
+  width:100%;height:160px;object-fit:cover;display:block;
+  background:var(--muted);
+}
+.wc-body{padding:.9rem;display:flex;flex-direction:column;gap:.4rem;flex:1}
+.wc-tag{font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.wc-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:var(--ink);line-height:1.2}
+.wc-note{font-size:.52rem;color:var(--dim)}
+.wc-actions{display:flex;gap:0;border-top:1px solid var(--line);margin-top:auto}
+.wc-btn{
+  flex:1;background:none;border:none;border-right:1px solid var(--line);
+  font-family:'Space Mono',monospace;font-size:.5rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);padding:.5rem;cursor:pointer;
+  transition:color .2s,background .2s;
+}
+.wc-btn:last-child{border-right:none}
+.wc-btn.edit:hover{color:var(--violet)}
+.wc-btn.del:hover{color:var(--red);background:rgba(200,74,74,.06)}
+
+/* empty state */
+#works-empty{
+  font-size:.6rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;
+  text-align:center;padding:4rem 0;display:none;
+}
+#works-empty.show{display:block}
+
+/* ── edit modal ── */
+#modal-overlay{
+  position:fixed;inset:0;background:rgba(10,9,8,.92);z-index:2000;
+  display:none;align-items:center;justify-content:center;
+}
+#modal-overlay.open{display:flex}
+#modal{width:400px;border:1px solid var(--line);background:var(--bg);padding:2rem}
+.modal-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;
+  letter-spacing:-.02em;margin-bottom:1.6rem;
+}
+.modal-actions{display:flex;gap:.8rem;margin-top:1.4rem}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login-view">
+  <div class="login-box">
+    <div class="login-title">artbyo3</div>
+    <div class="login-sub">dashboard access</div>
+    <div class="field">
+      <label>username</label>
+      <input id="inp-user" type="text" autocomplete="username" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>password</label>
+      <input id="inp-pass" type="password" autocomplete="current-password">
+    </div>
+    <button class="btn primary" id="btn-login">enter →</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app-view">
+
+  <div id="topbar">
+    <div class="topbar-logo">artbyo3 <span>/ dash</span></div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button id="btn-logout">logout</button>
+    </div>
+  </div>
+
+  <div id="main">
+
+    <!-- upload panel -->
+    <div id="upload-panel">
+      <div class="panel-head">upload</div>
+
+      <div id="drop-zone">
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/gif">
+        <img id="drop-preview" alt="">
+        <div id="drop-label">drag & drop image<br><span style="color:var(--muted)">or click to browse</span></div>
+        <div id="drop-filename"></div>
+      </div>
+
+      <div class="f-row">
+        <div class="field">
+          <label>title</label>
+          <input id="inp-title" type="text" maxlength="120" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="f-row">
+        <div class="field">
+          <label>tag</label>
+          <input id="inp-tag" type="text" maxlength="80" spellcheck="false" placeholder="illustration">
+        </div>
+        <div class="field">
+          <label>category</label>
+          <select id="inp-category">
+            <option value="2d">2d</option>
+            <option value="3d">3d</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>note <span style="color:var(--muted)">(optional)</span></label>
+        <input id="inp-note" type="text" maxlength="300" spellcheck="false">
+      </div>
+
+      <div class="f-row">
+        <div class="field">
+          <label>placeholder hue — <span id="hue-val">270</span>°</label>
+          <input id="inp-hue" type="range" min="0" max="360" value="270">
+          <div class="hue-preview"><div id="hue-dot" style="margin-left:calc(270/360*100% - 5px)"></div></div>
+        </div>
+        <div class="field">
+          <label>shader</label>
+          <select id="inp-shader">
+            <option value="noise">noise</option>
+            <option value="wave">wave</option>
+            <option value="grid">grid</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="upload-err"></div>
+      <div id="upload-ok">✓ uploaded successfully</div>
+      <button class="btn primary" id="btn-upload">upload work ↑</button>
+    </div>
+
+    <!-- works panel -->
+    <div id="works-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div class="panel-head" style="border-bottom:none;padding-bottom:0">works</div>
+        <div class="filter-tabs">
+          <button class="ftab active" data-f="all">all</button>
+          <button class="ftab" data-f="2d">2d</button>
+          <button class="ftab" data-f="3d">3d</button>
+        </div>
+      </div>
+      <div id="works-grid"></div>
+      <div id="works-empty">no works yet</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── EDIT MODAL ── -->
+<div id="modal-overlay">
+  <div id="modal">
+    <div class="modal-title">edit work</div>
+    <input type="hidden" id="edit-id">
+    <div class="field"><label>title</label><input id="edit-title" type="text" maxlength="120" spellcheck="false"></div>
+    <div class="f-row">
+      <div class="field"><label>tag</label><input id="edit-tag" type="text" maxlength="80" spellcheck="false"></div>
+    </div>
+    <div class="field"><label>note</label><input id="edit-note" type="text" maxlength="300" spellcheck="false"></div>
+    <div class="f-row">
+      <div class="field">
+        <label>hue — <span id="edit-hue-val">270</span>°</label>
+        <input id="edit-hue" type="range" min="0" max="360" value="270">
+      </div>
+      <div class="field">
+        <label>shader</label>
+        <select id="edit-shader">
+          <option value="noise">noise</option>
+          <option value="wave">wave</option>
+          <option value="grid">grid</option>
+        </select>
+      </div>
+    </div>
+    <div class="err" id="edit-err"></div>
+    <div class="modal-actions">
+      <button class="btn primary" id="btn-save">save changes</button>
+      <button class="btn" id="btn-cancel">cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ── state ─────────────────────────────────────────────────────────────────────
+let works = [];
+let filter = 'all';
+let selectedFile = null;
+
+// ── auth ──────────────────────────────────────────────────────────────────────
+async function checkAuth() {
+  try {
+    const r = await fetch('/auth/me', { credentials: 'include' });
+    if (r.ok) {
+      const d = await r.json();
+      showApp(d.username);
+    } else {
+      showLogin();
+    }
+  } catch { showLogin(); }
+}
+
+function showLogin() {
+  $('login-view').classList.remove('hidden');
+  $('app-view').classList.remove('visible');
+}
+
+function showApp(username) {
+  $('login-view').classList.add('hidden');
+  $('app-view').classList.add('visible');
+  $('topbar-user').textContent = username;
+  loadWorks();
+}
+
+// login
+$('btn-login').addEventListener('click', doLogin);
+['inp-user','inp-pass'].forEach(id => {
+  $(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+});
+
+async function doLogin() {
+  const err = $('login-err');
+  err.textContent = '';
+  const username = $('inp-user').value.trim();
+  const password = $('inp-pass').value;
+  if (!username || !password) { err.textContent = 'fill in all fields'; return; }
+
+  $('btn-login').textContent = '...';
+  $('btn-login').disabled = true;
+
+  try {
+    const r = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, password }),
+    });
+    if (r.ok) {
+      showApp(username);
+    } else {
+      const d = await r.json().catch(()=>({}));
+      err.textContent = d.detail || 'invalid credentials';
+    }
+  } catch { err.textContent = 'connection error'; }
+  finally {
+    $('btn-login').textContent = 'enter →';
+    $('btn-login').disabled = false;
+  }
+}
+
+// logout
+$('btn-logout').addEventListener('click', async () => {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  showLogin();
+});
+
+// ── drop zone ─────────────────────────────────────────────────────────────────
+const dropZone = $('drop-zone');
+const fileInput = $('file-input');
+const dropPreview = $('drop-preview');
+const dropFilename = $('drop-filename');
+const dropLabel = $('drop-label');
+
+function applyFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  dropFilename.textContent = file.name;
+  dropFilename.classList.add('show');
+  dropLabel.style.display = 'none';
+  dropZone.classList.add('has-file');
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    dropPreview.src = e.target.result;
+    dropPreview.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+}
+
+fileInput.addEventListener('change', () => { if(fileInput.files[0]) applyFile(fileInput.files[0]); });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  if (e.dataTransfer.files[0]) applyFile(e.dataTransfer.files[0]);
+});
+
+// hue slider
+$('inp-hue').addEventListener('input', function() {
+  $('hue-val').textContent = this.value;
+  $('hue-dot').style.marginLeft = `calc(${this.value}/360*100% - 5px)`;
+});
+$('edit-hue').addEventListener('input', function() {
+  $('edit-hue-val').textContent = this.value;
+});
+
+// ── upload ────────────────────────────────────────────────────────────────────
+$('btn-upload').addEventListener('click', async () => {
+  const errEl = $('upload-err');
+  const okEl  = $('upload-ok');
+  errEl.textContent = '';
+  okEl.style.display = 'none';
+
+  if (!selectedFile)           { errEl.textContent = 'select an image first'; return; }
+  if (!$('inp-title').value.trim()) { errEl.textContent = 'title is required'; return; }
+  if (!$('inp-tag').value.trim())   { errEl.textContent = 'tag is required'; return; }
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+  fd.append('title', $('inp-title').value.trim());
+  fd.append('tag', $('inp-tag').value.trim());
+  fd.append('category', $('inp-category').value);
+  fd.append('note', $('inp-note').value.trim());
+  fd.append('hue', $('inp-hue').value);
+  fd.append('shader', $('inp-shader').value);
+
+  $('btn-upload').textContent = 'uploading...';
+  $('btn-upload').disabled = true;
+
+  try {
+    const r = await fetch('/api/works', { method:'POST', body:fd, credentials:'include' });
+    if (r.ok) {
+      okEl.style.display = 'block';
+      resetUploadForm();
+      await loadWorks();
+    } else {
+      const d = await r.json().catch(()=>({}));
+      errEl.textContent = d.detail || 'upload failed';
+    }
+  } catch { errEl.textContent = 'connection error'; }
+  finally {
+    $('btn-upload').textContent = 'upload work ↑';
+    $('btn-upload').disabled = false;
+  }
+});
+
+function resetUploadForm() {
+  selectedFile = null;
+  fileInput.value = '';
+  dropPreview.src = '';
+  dropPreview.classList.remove('show');
+  dropFilename.textContent = '';
+  dropFilename.classList.remove('show');
+  dropLabel.style.display = '';
+  dropZone.classList.remove('has-file');
+  $('inp-title').value = '';
+  $('inp-tag').value = '';
+  $('inp-note').value = '';
+  $('inp-hue').value = 270;
+  $('hue-val').textContent = 270;
+  $('hue-dot').style.marginLeft = 'calc(270/360*100% - 5px)';
+  $('inp-shader').value = 'noise';
+}
+
+// ── load & render works ───────────────────────────────────────────────────────
+async function loadWorks() {
+  try {
+    const r = await fetch('/api/works', { credentials:'include' });
+    if (r.ok) { works = await r.json(); renderWorks(); }
+  } catch {}
+}
+
+function renderWorks() {
+  const grid = $('works-grid');
+  const empty = $('works-empty');
+  const filtered = filter === 'all' ? works : works.filter(w => w.category === filter);
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    empty.classList.add('show');
+    return;
+  }
+  empty.classList.remove('show');
+
+  grid.innerHTML = '';
+  filtered.forEach(w => {
+    const imgSrc = `/uploads/${w.category}/${w.filename}`;
+
+    const card = document.createElement('div');
+    card.className = 'wc';
+
+    const img = document.createElement('img');
+    img.className = 'wc-img'; img.src = imgSrc; img.alt = w.title; img.loading = 'lazy';
+
+    const body = document.createElement('div');
+    body.className = 'wc-body';
+    body.innerHTML = `<div class="wc-tag">${esc(w.tag)} · ${esc(w.category)}</div>
+      <div class="wc-title">${esc(w.title)}</div>
+      ${w.note ? `<div class="wc-note">${esc(w.note)}</div>` : ''}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'wc-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'wc-btn edit';
+    editBtn.textContent = 'edit';
+    editBtn.addEventListener('click', () => openEdit(w.id));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'wc-btn del';
+    delBtn.textContent = 'delete';
+    delBtn.addEventListener('click', () => deleteWork(w.id));
+
+    actions.append(editBtn, delBtn);
+    card.append(img, body, actions);
+    grid.appendChild(card);
+  });
+}
+
+// filter tabs
+document.querySelectorAll('.ftab').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    filter = this.dataset.f;
+    renderWorks();
+  });
+});
+
+// ── edit modal ────────────────────────────────────────────────────────────────
+function openEdit(id) {
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  $('edit-id').value = id;
+  $('edit-title').value = w.title;
+  $('edit-tag').value = w.tag;
+  $('edit-note').value = w.note || '';
+  $('edit-hue').value = w.hue || 270;
+  $('edit-hue-val').textContent = w.hue || 270;
+  $('edit-shader').value = w.shader || 'noise';
+  $('edit-err').textContent = '';
+  $('modal-overlay').classList.add('open');
+}
+
+$('btn-cancel').addEventListener('click', () => $('modal-overlay').classList.remove('open'));
+$('modal-overlay').addEventListener('click', e => { if(e.target === $('modal-overlay')) $('modal-overlay').classList.remove('open'); });
+
+$('btn-save').addEventListener('click', async () => {
+  const id = $('edit-id').value;
+  const errEl = $('edit-err');
+  errEl.textContent = '';
+
+  if (!$('edit-title').value.trim()) { errEl.textContent = 'title is required'; return; }
+
+  const fd = new FormData();
+  fd.append('title', $('edit-title').value.trim());
+  fd.append('tag', $('edit-tag').value.trim());
+  fd.append('note', $('edit-note').value.trim());
+  fd.append('hue', $('edit-hue').value);
+  fd.append('shader', $('edit-shader').value);
+
+  $('btn-save').textContent = 'saving...';
+  $('btn-save').disabled = true;
+
+  try {
+    const r = await fetch(`/api/works/${id}`, { method:'PUT', body:fd, credentials:'include' });
+    if (r.ok) {
+      $('modal-overlay').classList.remove('open');
+      await loadWorks();
+    } else {
+      const d = await r.json().catch(()=>({}));
+      errEl.textContent = d.detail || 'save failed';
+    }
+  } catch { errEl.textContent = 'connection error'; }
+  finally {
+    $('btn-save').textContent = 'save changes';
+    $('btn-save').disabled = false;
+  }
+});
+
+// ── delete ────────────────────────────────────────────────────────────────────
+async function deleteWork(id) {
+  const w = works.find(x => x.id === id);
+  if (!w) return;
+  if (!confirm(`delete "${w.title}"? this cannot be undone.`)) return;
+
+  try {
+    const r = await fetch(`/api/works/${id}`, { method:'DELETE', credentials:'include' });
+    if (r.ok) { await loadWorks(); }
+  } catch {}
+}
+
+// ── utils ─────────────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
