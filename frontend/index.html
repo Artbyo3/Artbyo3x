@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>artbyo3</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- ══════════════ HOME ══════════════ -->
+<div class="pg on" id="pg-home">
+
+  <a class="nav-logo" href="#" onclick="show('home');return false">artbyo<span>3</span></a>
+
+  <div id="home-hero">
+    <div class="hero-left">
+      <video autoplay muted loop playsinline>
+        <source src="videos/0405.mp4" type="video/mp4">
+      </video>
+      <div>
+        <div class="hero-name">artbyo3</div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <button class="hero-zone z2" onclick="show('2d')">
+        <canvas data-phue="320" data-ps="noise"></canvas>
+        <div class="hz-content">
+          <span class="hz-label">illustration</span>
+          <span class="hz-title">2d</span>
+          <span class="hz-sub">drawings, anime, digital art</span>
+        </div>
+      </button>
+      <button class="hero-zone z3" onclick="show('3d')">
+        <canvas data-phue="260" data-ps="wave"></canvas>
+        <div class="hz-content">
+          <span class="hz-label">3d / vrc</span>
+          <span class="hz-title">3d</span>
+          <span class="hz-sub">clothes for virtual avatars</span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════ 2D ══════════════ -->
+<div class="pg off" id="pg-2d">
+
+  <a class="nav-logo" href="#" onclick="show('home');return false">artbyo<span>3</span></a>
+
+  <div class="gal-hero">
+    <div class="gal-hero-title">
+      <span>illustration</span>
+      2d
+    </div>
+    <span class="gal-count" id="count-2d">— works</span>
+  </div>
+
+  <div class="gal-body">
+    <div class="gal-grid" id="grid-2d"></div>
+  </div>
+
+</div>
+
+<!-- ══════════════ 3D ══════════════ -->
+<div class="pg off" id="pg-3d">
+
+  <a class="nav-logo" href="#" onclick="show('home');return false">artbyo<span>3</span></a>
+
+  <div class="gal-hero">
+    <div class="gal-hero-title">
+      <span>3d / vrc</span>
+      3d
+    </div>
+    <span class="gal-count" id="count-3d">— works</span>
+  </div>
+
+  <div class="gal-body">
+    <div class="gal-grid" id="grid-3d"></div>
+  </div>
+
+</div>
+
+<!-- ── LIGHTBOX ── -->
+<div id="lb">
+  <div id="lb-bar">
+    <div id="lb-info">
+      <div id="lb-title">—</div>
+      <div id="lb-sub">—</div>
+    </div>
+    <div id="lb-actions">
+      <button class="lb-btn dl" id="lb-dl">download ↓</button>
+      <button class="lb-btn" id="lb-close">✕</button>
+    </div>
+  </div>
+  <div id="lb-stage">
+    <button id="lb-prev">←</button>
+    <div id="lb-canvas-wrap"><canvas id="lb-cv"></canvas></div>
+    <img id="lb-img" alt="">
+    <button id="lb-next">→</button>
+  </div>
+  <div id="lb-strip-row">
+    <div id="lb-strip"></div>
+    <span id="lb-counter"></span>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

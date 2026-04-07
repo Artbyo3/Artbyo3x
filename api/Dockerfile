@@ -6,8 +6,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source
+# Copy source (api files)
 COPY . .
+
+# Copy frontend from parent context
+COPY ../frontend ./frontend
 
 # Runtime directories (overridden by volumes in production)
 RUN mkdir -p uploads/2d uploads/3d data public/videos

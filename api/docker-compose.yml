@@ -1,0 +1,27 @@
+services:
+  app:
+    image: python:3.11-slim
+    container_name: artbyo3
+    restart: unless-stopped
+    ports:
+      - "3301:8000"
+    environment:
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3301}
+    volumes:
+      - ./data:/app/data
+      - uploads_data:/app/uploads
+    working_dir: /app
+    command: >
+      sh -c "pip install --no-cache-dir fastapi uvicorn python-dotenv slowapi bcrypt python-multipart aiofiles &&
+             git clone --depth 1 --branch ${REPO_BRANCH:-main} ${REPO_URL} /tmp/repo &&
+             cp -r /tmp/repo/api/* /app/ &&
+             cp -r /tmp/repo/frontend /app/ &&
+             mkdir -p /app/uploads/2d /app/uploads/3d &&
+             rm -rf /tmp/repo &&
+             uvicorn main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  uploads_data:
